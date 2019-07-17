@@ -16,8 +16,13 @@ Gui,Add,Edit,x12 y121 w54 h21 vnumshapes,100
 Gui,Add,UpDown,x68 y122 w18 h21 Range50-5000,UpDown
 GuiControl, , Edit3, 201  ; set default value since UpDown Range picks lowest allowed by default
 
+Gui,Add,Text,x372 y125 w166 h13,Output every ## frames
+Gui,Add,Edit,x312 y121 w54 h21 vframecount,100
+Gui,Add,UpDown,x68 y122 w18 h21 Range1-5000,UpDown
+GuiControl, , framecount, 10  ; set default value since UpDown Range picks lowest allowed by default
+
 ; m	1	mode: 0=combo, 1=triangle, 2=rect, 3=ellipse, 4=circle, 5=rotatedrect, 6=beziers, 7=rotatedellipse, 8=polygon
-Gui,Add,GroupBox,x9 y150 w480 h80,Restrict to Matching Shape(s)
+Gui,Add,GroupBox,x9 y150 w480 h80,Restrict to Matching Shape(s) [pick one, or none for any shape]
 Gui,Add,Checkbox,x26 y172 w70 h13 vopttriangle gsubcheckbox,Triangle
 Gui,Add,Checkbox,x108 y172 w70 h13 voptcircle gsubcheckbox,Circle
 Gui,Add,Checkbox,x184 y172 w70 h13 voptrect gsubcheckbox,Rectangle
@@ -28,35 +33,56 @@ Gui,Add,Checkbox,x184 y192 w70 h13 voptellipse gsubcheckbox,Ellipse
 Gui,Add,Checkbox,x266 y192 w140 h13 voptrotellipse gsubcheckbox,Rotated Ellipse
 Gui,Add,Text,x366 y212 w122 h13 vopttotals,Shape Totals=0
 
-Gui,Add,Edit,x14 y248 w54 h21 veditbgcolor,BgColor
-Gui,Add,Slider,x9 y272 w180 h33 gBackground_Color vbgcolorred,0
-Gui,Add,Slider,x189 y272 w180 h33 gBackground_Color vbgcolorgreen,0
-Gui,Add,Slider,x400 y272 w180 h33 gBackground_Color vbgcolorblue,0
 
-Gui,Add,Text,x9 y308 w88 h13,Input W x H
-Gui,Add,Edit,x28 y304 w60 h21 vinheight,Height
-Gui,Add,UpDown,x28 y304 w18 h21 Range0-32768,UpDown
+Gui,Add,Text,x74 y250 w154 h21,Background Color (in hex)
+Gui,Add,Edit,x14 y248 w54 h21 veditbgcolor,000000
+
+Gui,Add,Text,x374 y250 w154 h21,Alpha value (0-255)
+Gui,Add,Edit,x314 y248 w54 h21 veditalpha,128
+Gui,Add,UpDown,x328 y304 w18 h21 Range0-255,UpDown
+GuiControl,,editalpha,128
+; Gui,Add,Slider,x9 y272 w180 h33 gBackground_Color vbgcolorred,0
+; Gui,Add,Slider,x189 y272 w180 h33 gBackground_Color vbgcolorgreen,0
+; Gui,Add,Slider,x400 y272 w180 h33 gBackground_Color vbgcolorblue,0
+
+Gui,Add,Text,x9 y308 w88 h13,Input size
+Gui,Add,Edit,x58 y304 w60 h21 vinheight,Height
+Gui,Add,UpDown,x68 y304 w18 h21 Range0-32768,UpDown
 GuiControl,,inheight,256
-Gui,Add,Edit,x98 y304 w60 h21 vinwidth,Width
-Gui,Add,UpDown,x100 y304 w18 h21 Range0-32768,UpDown
+; Gui,Add,Edit,x98 y304 w60 h21 vinwidth,Width
+; Gui,Add,UpDown,x100 y304 w18 h21 Range0-32768,UpDown
 
 
-Gui,Add,Text,x250 y308 w88 h13,Output W x H
-Gui,Add,Edit,x328 y304 w60 h21 voutheight,Height
-Gui,Add,UpDown,x328 y304 w18 h21 Range0-32768,UpDown
-Gui,Add,Edit,x398 y304 w60 h21 voutwidth,Width
-Gui,Add,UpDown,x400 y304 w18 h21 Range0-32768,UpDown
+Gui,Add,Text,x300 y308 w88 h13,Output size
+Gui,Add,Edit,x368 y304 w60 h21 voutheight,Height
+Gui,Add,UpDown,x378 y304 w18 h21 Range0-32768,UpDown
+GuiControl,,outheight,1024
+; Gui,Add,Edit,x398 y304 w60 h21 voutwidth,Width
+; Gui,Add,UpDown,x400 y304 w18 h21 Range0-32768,UpDown
 
-Gui,Add,Picture,x15 y340 w128 h128 vInputPicture,C:\windata_c\download.png
-Gui,Add,Picture,x315 y340 w128 h128 vOutputPicture,C:\windata_c\download.png
-Gui,Add,Button,x162 y450 w144 h23 gsubrunprimitive,Run primitive
-Gui,Show,w500 h500,primitive Go shape matcher GUI front-end by dboland v1.0
+Gui,Add,Picture,x9 y340 w138 h128 vInputPicture,C:\windata_c\download.png
+Gui,Add,Picture,x165 y340 w296 h256 vOutputPicture,C:\windata_c\download.png
+Gui,Add,Button,x9 y490 w134 h23 gsubkillprimitive,Kill primitive
+Gui,Add,Button,x9 y540 w134 h43 gsubrunprimitive,Run primitive
+Gui,Show,w500 h620,primitive Go shape matcher GUI front-end by dboland v1.0
 Gui, Add, StatusBar,, Pick input picture file`, some options and Run primitive
 
 ; globals
 pidrunning=0
 opttotals=0 ; shapes allowed, added up to one value
 
+return
+
+subkillprimitive:
+; todo, add error checking
+if pidrunning = 0
+{
+	SB_SetText("Primitive.exe not running")
+	return
+}
+process, waitclose, primitive.exe,10
+msgbox,0,Primitive Closed,Primitive.exe pid was %ErrorLevel%
+pidrunning=0
 return
 
 subcheckbox:
@@ -172,9 +198,12 @@ OutputFile:=latestoutputfile
 
 
 ; todo, Ideas for output filename, include all options in the run, like inputsize,  
+primitiveparms= -v -i "%InputFile%" -o "%Outputfile%" -n %numshapes% -m %opttotals% -nth 10 -s %outheight% -r %inheight%
 if debug > 1
-	msgbox,0, Running primitive, Options:`nInputfile: %InputFile%`nOutputFile: %OutputFile%`n-n %numshapes% -m %opttotals%,15
-run, primitive -i "%InputFile%" -o "%Outputfile%" -n %numshapes% -m %opttotals% -nth 10,,Min UseErrorLevel,primitivepid
+	msgbox,0,primitive parms,parms: %primitiveparms%
+if debug > 4
+	msgbox,0, Running primitive, old way - Options:`nInputfile: %InputFile%`nOutputFile: %OutputFile%`n-n %numshapes% -m %opttotals%,15
+run, primitive %primitiveparms%,,Min UseErrorLevel,primitivepid
 ;run, "sleep.exe" 12,,Min UseErrorLevel,primitivepid
 pidrunning=1
 timermax=5002
@@ -182,6 +211,12 @@ countdown:=timermax
 foundfiles=0
 filespersecond=0
 pidstarttime:=A_Now
+checkframes:=framecount+1
+if checkframes < 1
+	checkframes=2
+totalexpected:=format("{1:1i}",numshapes/framecount+1.5)
+if debug > 2
+	msgbox, total expected files %totalexpected%
 
 if debug > 1
 	msgbox,0,primitive Running in Background,primitive is making a copy of your picture using rectangles and circles etc (whatever you picked)`nThis will take many minutes,5
@@ -202,13 +237,15 @@ while (pidrunning = 1)
 		if debug > 4
 			MsgBox, The process %primitivepid% exists (errorlevel=%ErrorLevel%).
 		countdown:=countdown-1
+		countdowndiff:=timermax-countdown
+		
 		; in function calls the strings are "in quotes" and vars don't need %percent% signs
-		SB_SetText("primitive running in background (maybe " . countdown . " secs left)")
+		SB_SetText("primitive running in background for " countdowndiff " secs (maybe " . countdown . " secs left)")
 		pidrunning=1
 	}
 	; Separates a file name or URL into its name, directory, extension, and drive.
 	; SplitPath, InputVar , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
-	if (mod(countdown,10) = 0)
+	if (mod(countdown,checkframes) = 0)
 	{
 		;SplitPath, latestoutputfile , OutFileName, OutDir, OutExtension, OutNameNoExt, OutDrive
 		;guicontrol,, OutputFile, %OutDir%\%OutNameNoExt%_primitive_`%d.%OutExtension%
@@ -216,6 +253,8 @@ while (pidrunning = 1)
 
 		foundfiles=0
 		newoutputfiles=0
+		newestmatchfilename=
+		newestmatchfiletime=0
 		if debug > 1
 			msgbox, looping for %outputfilepattern%
 		loop, files, %outputfilepattern%
@@ -231,6 +270,11 @@ while (pidrunning = 1)
 				if debug > 3
 					msgbox, 0,fileloop new file, new file matches`ncomparing job start %pidstarttime%`nto timestamp on file %A_LoopFileTimeModified% "%A_LoopFileName%",1
 				newoutputfiles:=newoutputfiles+1
+				if (A_LoopFileTimeModified > newestmatchfiletime)
+				{
+					newestmatchfilename:=A_LoopFilePath
+					newestmatchfiletime:=A_LoopFileTimeModified
+				}
 			}
 			else
 			{
@@ -238,9 +282,18 @@ while (pidrunning = 1)
 					msgbox, 0,fileloop old file, older file does not match`ncomparing job start %pidstarttime%`nto timestamp on file %A_LoopFileTimeModified% "%A_LoopFileName%",1
 			}
 		}
+		countdowndiff:=timermax-countdown
+		timeestimate:=newoutputfiles*countdowndiff
+		
 		if debug > 2
 			msgbox, %newoutputfiles% / %foundfiles% 
 		SB_SetText("primitive running in background looking for latest " newoutputfiles "/" foundfiles " file (maybe " . countdown . " secs left)")
+		if newestmatchfilename
+		{
+			if debug > 2
+				msgbox, newest file preview is: "%newestmatchfile%" %newestmatchfiletime% %newoutputfiles% / %foundfiles% 
+			guicontrol,,outputpicture,%newestmatchfilename%
+		}
 		
 	}
 
